@@ -75,6 +75,8 @@
 
 /.tmp.md
 
+compile_commands.json
+
 project-build-debug*.*
 project-build-staging*.*
 project-build-demo*.*

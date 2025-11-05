@@ -1,0 +1,14 @@
+.git
+.build
+.bin
+.cache
+.log
+.logs
+.out
+
+bin
+build
+log
+logs
+out
+
