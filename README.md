@@ -10,10 +10,10 @@ use this & that as future reference, I'm might create another module lib again, 
 -->
 
 __*NOTE:*__
-> mostly for personal usage
-> for gcc/clang, compile some library using -fPIC may require
-> you may need to adjust CMAKE_C_COMPIPLER & CMAKE_CXX_COMPILER
-> for scylladb & couchbase test, yout need to adjust as the config json file under tests dir
+- mostly for personal usage
+- for gcc/clang, compile some library using -fPIC may require
+- you may need to adjust CMAKE_C_COMPIPLER & CMAKE_CXX_COMPILER
+- for scylladb & couchbase test, yout need to adjust as the config json file under tests dir
 
 ## highlight
 
