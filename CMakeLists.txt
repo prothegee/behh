@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 # package
 set(BEHH_VERSION_MAJOR 0)
-set(BEHH_VERSION_MINOR 18)
+set(BEHH_VERSION_MINOR 19)
 set(BEHH_VERSION_PATCH 0)
-set(BEHH_VERSION_RELEASE_DATE 20250520)
+set(BEHH_VERSION_RELEASE_DATE 20251105)
 
 # package project
 project(behh
@@ -333,8 +333,24 @@ endif()
 ## jsoncpp
 set(BEHH_USING_JSONCPP false)
 
-find_package(jsoncpp CONFIG)
-if(jsoncpp_FOUND)
+find_package(JsonCpp)
+find_package(JsonCpp CONFIG QUIET)
+if(NOT JsonCpp_FOUND)
+    find_package(jsoncpp CONFIG QUIET)
+endif()
+if(NOT JsonCpp_FOUND AND NOT jsoncpp_FOUND)
+    find_package(Jsoncpp CONFIG QUIET)
+endif()
+if(NOT JsonCpp_FOUND AND NOT jsoncpp_FOUND AND NOT Jsoncpp_FOUND)
+    find_package(PkgConfig QUIET)
+    if(PKG_CONFIG_FOUND)
+        pkg_check_modules(JSONCPP jsoncpp)
+        if(JSONCPP_FOUND)
+            set(JsonCpp_FOUND TRUE)
+        endif()
+    endif()
+endif()
+if(JsonCpp_FOUND OR jsoncpp_FOUND OR Jsoncpp_FOUND OR JSONCPP_FOUND)
     set(BEHH_USING_JSONCPP true)
     message(NOTICE "-- ${PROJECT_NAME}: adding jsoncpp since package found")
 endif()
@@ -406,6 +422,16 @@ find_package(PostgreSQL)
 if(PostgreSQL_FOUND)
     set(BEHH_USING_POSTGRESQL true)
     message(NOTICE "-- ${PROJECT_NAME}: adding postgresql since package found")
+else()
+    set(BEHH_LIBPQ_FE_HEADER)
+    set(BEHH_POSTGRESQL_LIB)
+
+    find_file(BEHH_LIBPQ_FE_HEADER "libpq-fe.h")
+
+    if(BEHH_LIBPQ_FE_HEADER)
+        set(BEHH_USING_POSTGRESQL true)
+        message(NOTICE "-- ${PROJECT_NAME}: adding postgresql since header found")
+    endif()
 endif()
 ##
 ## scylladb
