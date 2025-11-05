@@ -63,7 +63,7 @@ int32_t matrix_to_svg(const std::string& file_output, const BitMatrix& matrix, c
 #if BEHH_USING_STB
 
 int32_t buffer_to_png(const std::string& file_output, const buffer_t& buffer, const int32_t& width, const int32_t& height, const int32_t& stb_comp) {
-    if (!utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_PNG_HINT) != 0) {
+    if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_PNG_HINT) != 1) {
         return -1;
     }
 
@@ -71,7 +71,7 @@ int32_t buffer_to_png(const std::string& file_output, const buffer_t& buffer, co
 }
 
 int32_t buffer_to_jpg(const std::string& file_output, const buffer_t& buffer, const int32_t& width, const int32_t& height, const int32_t& stb_comp) {
-    if (!utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPG_HINT) != 0 || !utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPEG_HINT) != 0) {
+    if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPG_HINT) != 1 || utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPEG_HINT) != 1) {
         return -1;
     }
 
@@ -83,7 +83,7 @@ int32_t buffer_to_jpg(const std::string& file_output, const buffer_t& buffer, co
 namespace rasterize {
 #if BEHH_USING_NANOSVG
 int32_t from_svg(const std::string& file_path, std::vector<uint8_t>& output, int32_t& width, int32_t& height) {
-    if (utility_functions::find::input_ends_with(file_path, FILE_EXTENSION_SVG_HINT) != 0) {
+    if (utility_functions::find::input_ends_with(file_path, FILE_EXTENSION_SVG_HINT) != 1) {
         std::cerr << "rasterize::from_svg: file is not ended with .svg\n";
         return -1;
     }
@@ -189,13 +189,13 @@ int32_t encode(const std::string& content, const std::string& file_output, const
             }
         }
 
-        if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_PNG_HINT) == 0) {
+        if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_PNG_HINT) == 1) {
             return image::buffer_to_png(file_output, image_data, _width, _height);
-        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPG_HINT) == 0) {
+        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPG_HINT) == 1) {
             return image::buffer_to_jpg(file_output, image_data, _width, _height);
-        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPEG_HINT) == 0) {
+        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_JPEG_HINT) == 1) {
             return image::buffer_to_jpg(file_output, image_data, _width, _height);
-        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_SVG_HINT) == 0) {
+        } else if (utility_functions::find::input_ends_with(file_output, FILE_EXTENSION_SVG_HINT) == 1) {
             return image::matrix_to_svg(file_output.c_str(), matrix, _width, _height, _margin);
         } else {
             return image::matrix_to_svg(file_output.c_str(), matrix, _width, _height, _margin);
@@ -214,7 +214,7 @@ int32_t decode(const std::string& content, std::string& file_output, const Barco
         std::vector<uint8_t> luminance_data;
 
         if (content.size() >= 4 && content.substr(content.size() - 4) == ".svg") {
-            if (rasterize::from_svg(content, luminance_data, width, height) != 0) {
+            if (rasterize::from_svg(content, luminance_data, width, height) != 1) {
                 std::cerr << "barqr::decode: failed to render svg: \"" << content << "\"\n";
                 return -1;
             }

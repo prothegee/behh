@@ -184,7 +184,7 @@ int32_t argon2id_verifier(const std::string& input, const std::string& hash_enco
         return -1;
     }
 
-    return 1;
+    return ARGON2_OK;
 }
 #endif // BEHH_USING_ARGON2
 
