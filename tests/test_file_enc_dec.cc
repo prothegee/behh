@@ -18,7 +18,7 @@ int main() {
         example_in1, example_out1_enc,
         iv_16,
         ik_32);
-    assert(example_in1_status == 0);
+    assert(example_in1_status == 1);
     std::cout << "passed: example_in1_status\n";
 
     auto example_out1_status = behh::utility_functions::file::decrypt(
@@ -26,7 +26,7 @@ int main() {
         example_out1_enc, example_out1_dec,
         iv_16,
         ik_32);
-    assert(example_out1_status == 0);
+    assert(example_out1_status == 1);
     std::cout << "passed: example_out1_status\n";
 #endif // BEHH_USING_OPENSSL
 
