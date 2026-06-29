@@ -76,6 +76,7 @@
 /.tmp.md
 
 compile_commands.json
+thresholds_new.pnm
 
 project-build-debug*.*
 project-build-staging*.*
