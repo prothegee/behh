@@ -436,11 +436,7 @@ std::string format_uuid_to_ref(const std::string& uuid_string) {
 }
 
 std::string format_ref_to_uuid(const std::string& uuid_string) {
-    return uuid_string.substr(0, 8) + "-" 
-         + uuid_string.substr(8, 4) + "-" 
-         + uuid_string.substr(12, 4) + "-" 
-         + uuid_string.substr(16, 4) + "-" 
-         + uuid_string.substr(20, 12);
+    return uuid_string.substr(0, 8) + "-" + uuid_string.substr(8, 4) + "-" + uuid_string.substr(12, 4) + "-" + uuid_string.substr(16, 4) + "-" + uuid_string.substr(20, 12);
 }
 } // namespace uuid
 
@@ -1075,6 +1071,33 @@ int32_t encrypt(const int32_t& mode, const std::string& file_input, const std::s
         ERR_free_strings();
     } break;
 
+    case 2: {
+        std::ofstream file_out(file_output, std::ios::binary);
+
+        OpenSSL_add_all_algorithms();
+        ERR_load_crypto_strings();
+
+        buffer_t iv_buffer = string::to_buffer(iv, 16);
+        buffer_t ik_buffer = string::to_buffer(ik, 16);
+
+        while (file_in) {
+            file_in.read(reinterpret_cast<char*>(buffer.data()), chunk_size);
+            size_t bytes_read = file_in.gcount();
+
+            if (bytes_read > 0) {
+                buffer_t chunk = cryptography_functions::stream_cipher::aes_gcm_encrypt_to_buffer_openssl(buffer_t(buffer.begin(), buffer.begin() + bytes_read), iv_buffer.data(), ik_buffer.data());
+
+                if (!file_out.write(reinterpret_cast<const char*>(chunk.data()), chunk.size())) {
+                    std::cerr << "file::encrypt: error encrypt at " << bytes_read << " of bytes_read\n";
+                    isOk = false;
+                }
+            }
+        }
+
+        EVP_cleanup();
+        ERR_free_strings();
+    } break;
+
     default: {
         std::cerr << "file::encrypt: mode is not support";
         isOk = false;
@@ -1115,6 +1138,33 @@ int32_t decrypt(const int32_t& mode, const std::string& file_input, const std::s
 
             if (bytes_read > 0) {
                 buffer_t chunk = cryptography_functions::stream_cipher::aes_cbc_decrypt_to_buffer_openssl(buffer_t(buffer.begin(), buffer.begin() + bytes_read), iv_buffer.data(), ik_buffer.data());
+
+                if (!file_out.write(reinterpret_cast<const char*>(chunk.data()), chunk.size())) {
+                    std::cerr << "file::decrypt: error decrypt at " << bytes_read << " of bytes_read\n";
+                    isOk = false;
+                }
+            }
+        }
+
+        EVP_cleanup();
+        ERR_free_strings();
+    } break;
+
+    case 2: {
+        std::ofstream file_out(file_output, std::ios::binary);
+
+        OpenSSL_add_all_algorithms();
+        ERR_load_crypto_strings();
+
+        buffer_t iv_buffer = string::to_buffer(iv, 16);
+        buffer_t ik_buffer = string::to_buffer(ik, 16);
+
+        while (file_in) {
+            file_in.read(reinterpret_cast<char*>(buffer.data()), chunk_size);
+            size_t bytes_read = file_in.gcount();
+
+            if (bytes_read > 0) {
+                buffer_t chunk = cryptography_functions::stream_cipher::aes_gcm_decrypt_to_buffer_openssl(buffer_t(buffer.begin(), buffer.begin() + bytes_read), iv_buffer.data(), ik_buffer.data());
 
                 if (!file_out.write(reinterpret_cast<const char*>(chunk.data()), chunk.size())) {
                     std::cerr << "file::decrypt: error decrypt at " << bytes_read << " of bytes_read\n";

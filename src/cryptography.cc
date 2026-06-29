@@ -358,6 +358,213 @@ buffer_t aes_cbc_decrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_bu
 
     return plaintext;
 }
+
+int32_t aes_gcm_encrypt_openssl(const std::string& input, std::string& output, const std::string& iv, const std::string& ik) {
+    EVP_CIPHER_CTX* pCtx = EVP_CIPHER_CTX_new();
+
+    if (!pCtx) {
+        std::cerr << "stream_cipher::aes_gcm_encrypt_openssl: fail to create cipher context!\n";
+        return -1;
+    }
+
+    if (EVP_EncryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, reinterpret_cast<const unsigned char*>(ik.c_str()), reinterpret_cast<const unsigned char*>(iv.c_str())) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_encrypt_openssl: fail to initialize cipher context!\n";
+        return -2;
+    }
+
+    int32_t len = 0, ciphertext_len = 0;
+    buffer_t ciphertext(input.size() + AES_BLOCK_SIZE);
+    if (EVP_EncryptUpdate(pCtx, ciphertext.data(), &len, reinterpret_cast<const unsigned char*>(input.c_str()), (int)input.size()) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_encrypt_openssl: fail to encrypt data context!\n";
+        return -3;
+    }
+    ciphertext_len = len;
+
+    if (EVP_EncryptFinal_ex(pCtx, ciphertext.data() + len, &len) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_encrypt_openssl: fail to finalize data context!\n";
+        return -4;
+    }
+    ciphertext_len += len;
+
+    if (EVP_CIPHER_CTX_ctrl(pCtx, EVP_CTRL_GCM_GET_TAG, AES_BLOCK_SIZE, ciphertext.data() + ciphertext_len) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_encrypt_openssl: fail to get auth tag!\n";
+        return -5;
+    }
+    ciphertext_len += AES_BLOCK_SIZE;
+
+    std::string tmp_out(ciphertext.begin(), ciphertext.begin() + ciphertext_len);
+
+    output = string_to_custom_base36_openssl(tmp_out);
+
+    EVP_CIPHER_CTX_free(pCtx); // start free object/s
+
+    return 1;
+}
+
+int32_t aes_gcm_decrypt_openssl(const std::string& input, std::string& output, const std::string& iv, const std::string& ik) {
+    std::string binary_input = string_from_custom_base36_openssl(input);
+
+    if ((int32_t)binary_input.size() < AES_BLOCK_SIZE) {
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: input is too short to contain a tag!\n";
+        return -1;
+    }
+
+    size_t cipher_len = binary_input.size() - AES_BLOCK_SIZE;
+    buffer_t tag(binary_input.end() - AES_BLOCK_SIZE, binary_input.end());
+
+    EVP_CIPHER_CTX* pCtx = EVP_CIPHER_CTX_new();
+
+    if (!pCtx) {
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: failed to create cipher context\n";
+        return -2;
+    }
+
+    if (EVP_DecryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, reinterpret_cast<const unsigned char*>(ik.c_str()), reinterpret_cast<const unsigned char*>(iv.c_str())) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: fail to initialize cipher context!\n";
+        return -3;
+    }
+
+    int32_t len = 0, plaintext_len = 0;
+    buffer_t plaintext(binary_input.size() + AES_BLOCK_SIZE);
+    if (EVP_DecryptUpdate(pCtx, plaintext.data(), &len, reinterpret_cast<const unsigned char*>(binary_input.c_str()), (int)cipher_len) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: fail to decrypt data context!\n";
+        return -4;
+    }
+    plaintext_len = len;
+
+    if (EVP_CIPHER_CTX_ctrl(pCtx, EVP_CTRL_GCM_SET_TAG, AES_BLOCK_SIZE, tag.data()) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: fail to set auth tag!\n";
+        return -5;
+    }
+
+    if (EVP_DecryptFinal_ex(pCtx, plaintext.data() + len, &len) != 1) {
+        EVP_CIPHER_CTX_free(pCtx);
+        std::cerr << "stream_cipher::aes_gcm_decrypt_openssl: auth tag mismatch, data tampered or wrong key/iv!\n";
+        return -6;
+    }
+    plaintext_len += len;
+
+    output.assign(plaintext.begin(), plaintext.begin() + plaintext_len);
+
+    EVP_CIPHER_CTX_free(pCtx);
+
+    return 1;
+}
+
+buffer_t aes_gcm_encrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_buffer, uchr_t* ik_buffer) {
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    EVP_CIPHER_CTX* pCtx = EVP_CIPHER_CTX_new();
+
+    if (!pCtx) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    if (1 != EVP_EncryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, ik_buffer, iv_buffer)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    int len;
+
+    buffer_t ciphertext(buffer.size() + AES_BLOCK_SIZE);
+
+    if (1 != EVP_EncryptUpdate(pCtx, ciphertext.data(), &len, buffer.data(), (int)buffer.size())) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    int ciphertext_len = len;
+
+    if (1 != EVP_EncryptFinal_ex(pCtx, ciphertext.data() + len, &len)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    ciphertext_len += len;
+
+    if (1 != EVP_CIPHER_CTX_ctrl(pCtx, EVP_CTRL_GCM_GET_TAG, AES_BLOCK_SIZE, ciphertext.data() + ciphertext_len)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    ciphertext_len += AES_BLOCK_SIZE;
+
+    ciphertext.resize(ciphertext_len);
+
+    EVP_CIPHER_CTX_free(pCtx);
+
+    EVP_cleanup();
+    ERR_free_strings();
+
+    return ciphertext;
+}
+
+buffer_t aes_gcm_decrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_buffer, uchr_t* ik_buffer) {
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    if ((int)buffer.size() < AES_BLOCK_SIZE) {
+        std::cerr << "stream_cipher::aes_gcm_decrypt_to_buffer_openssl: buffer is too short to contain a tag!\n";
+        return {};
+    }
+
+    size_t cipher_len = buffer.size() - AES_BLOCK_SIZE;
+    buffer_t tag(buffer.end() - AES_BLOCK_SIZE, buffer.end());
+
+    EVP_CIPHER_CTX* pCtx = EVP_CIPHER_CTX_new();
+
+    if (!pCtx) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    if (1 != EVP_DecryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, ik_buffer, iv_buffer)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    int len;
+
+    buffer_t plaintext(buffer.size());
+
+    if (1 != EVP_DecryptUpdate(pCtx, plaintext.data(), &len, buffer.data(), (int)cipher_len)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    int plaintext_len = len;
+
+    if (1 != EVP_CIPHER_CTX_ctrl(pCtx, EVP_CTRL_GCM_SET_TAG, AES_BLOCK_SIZE, tag.data())) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    if (1 != EVP_DecryptFinal_ex(pCtx, plaintext.data() + len, &len)) {
+        ERR_print_errors_fp(stderr);
+        return {};
+    }
+
+    plaintext_len += len;
+
+    plaintext.resize(plaintext_len);
+
+    EVP_CIPHER_CTX_free(pCtx);
+
+    EVP_cleanup();
+    ERR_free_strings();
+
+    return plaintext;
+}
 #endif // BEHH_USING_OPENSSL
 
 } // namespace stream_cipher

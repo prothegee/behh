@@ -22,7 +22,7 @@ struct TDisplayResolutionData {
 };
 
 class CTestNativeResolution {
-  private:
+private:
     // num count of display to intialize
     int m_numDisplay;
 
@@ -30,7 +30,7 @@ class CTestNativeResolution {
     // each child of index hold their own data
     std::vector<std::vector<TDisplayResolutionData>> m_displayResolutionsData;
 
-  public:
+public:
     CTestNativeResolution() = default;
     ~CTestNativeResolution() = default;
 

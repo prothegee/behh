@@ -179,6 +179,56 @@ buffer_t aes_cbc_encrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_bu
  * @return buffer_t
  */
 buffer_t aes_cbc_decrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_buffer, uchr_t* ik_buffer);
+
+/**
+ * @brief aes gcm encrypt input (authenticated)
+ *
+ * @note the 16 byte auth tag is appended to the ciphertext before encoding
+ *
+ * @param input data/message
+ * @param output output to store the result
+ * @param iv recomended length is 12 or more
+ * @param ik recomended length is 32
+ * @return int32_t 1 mean ok
+ */
+int32_t aes_gcm_encrypt_openssl(const std::string& input, std::string& output, const std::string& iv, const std::string& ik);
+
+/**
+ * @brief aes gcm decrypt (authenticated)
+ *
+ * @note input must end with the 16 byte auth tag, decrypt fails if it does not verify
+ *
+ * @param input
+ * @param output
+ * @param iv
+ * @param ik
+ * @return int32_t 1 mean ok
+ */
+int32_t aes_gcm_decrypt_openssl(const std::string& input, std::string& output, const std::string& iv, const std::string& ik);
+
+/**
+ * @brief aes gcm encrypt buffer (authenticated)
+ *
+ * @note the result is the ciphertext followed by the 16 byte auth tag
+ *
+ * @param buffer
+ * @param iv_buffer
+ * @param ik_buffer
+ * @return buffer_t
+ */
+buffer_t aes_gcm_encrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_buffer, uchr_t* ik_buffer);
+
+/**
+ * @brief aes gcm decrypt buffer (authenticated)
+ *
+ * @note buffer must be the ciphertext followed by the 16 byte auth tag
+ *
+ * @param buffer
+ * @param iv_buffer
+ * @param ik_buffer
+ * @return buffer_t
+ */
+buffer_t aes_gcm_decrypt_to_buffer_openssl(const buffer_t& buffer, uchr_t* iv_buffer, uchr_t* ik_buffer);
 #endif // BEHH_USING_OPENSSL
 
 } // namespace stream_cipher

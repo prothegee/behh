@@ -7,7 +7,7 @@
 #include <libpq-fe.h>
 #else
 #include <libpq-fe.h> // hasn't found need to be include postgresql dir first
-#endif // BEHH_USING_VCPKG
+#endif                // BEHH_USING_VCPKG
 
 namespace behh {
 

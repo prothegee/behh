@@ -135,7 +135,8 @@ int32_t IScyllaDbCoreInterface::_IScyllaDb::initialize_constructor(const scyllad
 #if BEHH_IS_DEBUG
     (std::strlen(extra_info) > 0)
         ? std::cout << "DEBUG: \
-        \"IScyllaDbCoreInterface::_IScyllaDb::initialize_constructor\" connected: " << extra_info << "\n"
+        \"IScyllaDbCoreInterface::_IScyllaDb::initialize_constructor\" connected: "
+                    << extra_info << "\n"
         : std::cout << "DEBUG: \
         \"IScyllaDbCoreInterface::_IScyllaDb::initialize_constructor\" connected ( extra_info is not provided )\n";
 #endif // BEHH_IS_DEBUG

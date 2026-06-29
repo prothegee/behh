@@ -5,12 +5,12 @@
 #include <behh/functions/utility.hh>
 #include <behh/interfaces/iscylladb_core_interface.hh>
 
+#include <atomic>
+#include <chrono>
+#include <future>
+#include <iostream>
 #include <mutex>
 #include <thread>
-#include <future>
-#include <chrono>
-#include <iostream>
-#include <atomic>
 
 // main config file for this test
 // if doesn't exists, copy the "test_database_scylla_rw.json.debug" and rename to "test_database_scylla_rw.json"
@@ -44,11 +44,11 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
     struct table_data {
         std::string id;
         std::string random_text;
-        int32_t     random_integer;
-        int64_t     random_big_integer;
-        float32_t   random_float;
-        float64_t   random_double;
-        int64_t     created_timestamp;
+        int32_t random_integer;
+        int64_t random_big_integer;
+        float32_t random_float;
+        float64_t random_double;
+        int64_t created_timestamp;
         std::string created_timestring;
     }; // struct table_data
 
@@ -69,7 +69,7 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
             conn.host += this_host;
         }
         std::cout << "conn.host: " << conn.host << "\n";
-        conn.host.resize(conn.host.size() - 1); // remove last , (coma) // error in msvc, it said 
+        conn.host.resize(conn.host.size() - 1); // remove last , (coma) // error in msvc, it said
 
         conn.username = CONFIG["connection"]["username"].asString();
         conn.password = CONFIG["connection"]["password"].asString();
@@ -106,8 +106,7 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
             note += " ";
             note += std::to_string(__LINE__);
             IScyllaDb.print_error(
-                IScyllaDb.get_cass_future(), note.c_str()
-            );
+                IScyllaDb.get_cass_future(), note.c_str());
         }
 
         // note: multiple_datacenters might need to check
@@ -123,8 +122,7 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
 
         if (IScyllaDb.execute_cqlsh(IScyllaDb.get_cass_session(), query.c_str(), "BasicDbTable::initialize_table") != CASS_OK) {
             IScyllaDb.print_error(
-                IScyllaDb.get_cass_future()
-            );
+                IScyllaDb.get_cass_future());
         }
     }
 
@@ -176,8 +174,8 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
 
         size_t query_params = 8;
 
-        CassFuture *p_future = nullptr;
-        CassStatement *p_statement = cass_statement_new(query.c_str(), query_params);
+        CassFuture* p_future = nullptr;
+        CassStatement* p_statement = cass_statement_new(query.c_str(), query_params);
 
         // id
         CassUuid id = IScyllaDb.convert_string_to_uuid(data.id);
@@ -212,8 +210,8 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
         if (count_iter <= max_iter) {
             std::cout << "\r         \r";
             std::cout << "-- note: current iter is " << current_iter
-                    << " with " << count_error.load(std::memory_order_relaxed) << " errors "
-                    << count_collide.load(std::memory_order_relaxed) << " collides" << std::flush;
+                      << " with " << count_error.load(std::memory_order_relaxed) << " errors "
+                      << count_collide.load(std::memory_order_relaxed) << " collides" << std::flush;
         }
 
         if (count_iter == max_iter) {
@@ -235,8 +233,7 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
 
         if (IScyllaDb.execute_cqlsh(IScyllaDb.get_cass_session(), query.c_str(), "BasicDbTable::cleanup") != CASS_OK) {
             IScyllaDb.print_error(
-                IScyllaDb.get_cass_future(), "BasicDbTable::cleanup: can't drop the table"
-            );
+                IScyllaDb.get_cass_future(), "BasicDbTable::cleanup: can't drop the table");
         }
     }
 }; // class SyllaDbRW
@@ -272,8 +269,7 @@ int main() {
                 std::launch::async,
                 [&table, &count_error, &count_iter, &count_collide, &MAX_ITER_WRITE]() {
                     table.generate_random_data(count_error, count_iter, count_collide, MAX_ITER_WRITE);
-                }
-            ));
+                }));
         }
 
         // for (auto& future : futures) {
@@ -295,12 +291,9 @@ int main() {
         uint64_t errors = count_error.load();
         uint64_t collides = count_collide.load();
 
-        if (errors > 0 || count_collide > 0)
-        {
+        if (errors > 0 || count_collide > 0) {
             std::cout << "\n-- note: found " << errors << " error & " << collides << " collide, while executing in " << duration.count() << "seconds\n";
-        }
-        else
-        {
+        } else {
             std::cout << "\n-- note: no error & collide found in " << duration.count() << " seconds\n";
         }
     }

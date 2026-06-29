@@ -3,8 +3,8 @@
 #include "../pch.hh"
 
 #if BEHH_USING_SCYLLADB
-#include <cassandra.h>
 #include <behh/types/auth_type.hh>
+#include <cassandra.h>
 
 namespace behh {
 
@@ -93,9 +93,9 @@ INLNSTTCCNST std::string SCYLLADB_TOPOLOGY_STRAT_EVERYWHERE_STRATEGY_HINT = "Eve
 
 /**
  * @brief convert scylladb_topology_strat enum to string
- * 
- * @param topology_strat_enum 
- * @return std::string 
+ *
+ * @param topology_strat_enum
+ * @return std::string
  */
 INLNSTTC std::string scylladb_topology_strat_to_string(const scylladb_topology_strat_e& topology_strat_enum) {
     std::string result = "";

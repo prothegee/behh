@@ -1,6 +1,7 @@
 # behh
 
-[![CI Debian & Arch](https://github.com/prothegee/behh/actions/workflows/ci.yml/badge.svg)](https://github.com/prothegee/behh/actions/workflows/ci.yml)
+[![debian trixie](https://github.com/prothegee/behh/actions/workflows/ci-debian.yml/badge.svg?branch=main)](https://github.com/prothegee/behh/actions/workflows/ci-debian.yml)<br>
+[![archlinux latest](https://github.com/prothegee/behh/actions/workflows/ci-arch.yml/badge.svg?branch=main)](https://github.com/prothegee/behh/actions/workflows/ci-arch.yml)
 
 module library treatment for c++ backend project
 <!--
@@ -30,10 +31,10 @@ grouped by module under the `behh` namespace. some capabilities only build when 
 | :- | :- | :- |
 | hash | sha1, sha224, sha256, sha384, sha512 | openssl |
 | password hash | argon2id hash and verifier | argon2 |
-| symmetric cipher | aes-256-cbc, string in/out and buffer in/out | openssl |
+| symmetric cipher | aes-256-cbc and aes-256-gcm (authenticated), string in/out and buffer in/out | openssl |
 | encoding | bytes to hex, string to hex, custom base36 (encode and decode) | openssl |
 
-> note: only aes-256-cbc is provided today (no gcm, no 128/192 bit).
+> note: cbc and gcm are aes-256 only (no 128/192 bit). gcm appends a 16 byte auth tag and rejects tampered or wrong key input.
 
 ### utility (`behh::utility_functions`)
 
@@ -47,7 +48,7 @@ grouped by module under the `behh` namespace. some capabilities only build when 
 | string | letter case convert, convert to sized buffer | - |
 | json | jsoncpp and taocpp-json: read, convert, save as .json and .csv, csv to json array | jsoncpp, taocpp-json |
 | file io | read file to buffer, write buffer to file | - |
-| file crypto | encrypt and decrypt a file by mode (uses aes-256-cbc buffer path) | openssl |
+| file crypto | encrypt and decrypt a file by mode (1: aes-256-cbc, 2: aes-256-gcm) | openssl |
 
 ### generate (`behh::generate_functions`)
 
