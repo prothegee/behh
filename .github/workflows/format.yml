@@ -22,7 +22,8 @@ concurrency:
 
 jobs:
   clang-format:
-    runs-on: ubuntu-latest
+    # ubuntu 26.04 (resolute) ships clang-format-22 in apt, matching the local version.
+    runs-on: ubuntu-26.04
     steps:
       - name: checkout pr branch
         uses: actions/checkout@v4
@@ -32,9 +33,11 @@ jobs:
       - name: install clang-format
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format
+          sudo apt-get install -y --no-install-recommends clang-format-22
 
       - name: run formatter
+        env:
+          CLANG_FORMAT: clang-format-22
         run: ./clang-format.sh
 
       - name: commit changes

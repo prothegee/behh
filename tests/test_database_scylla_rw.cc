@@ -87,7 +87,7 @@ create table if not exists {KEYSPACE}.{TABLE_NAME} (
         // finally
         m_conn = conn;
     }
-    ~BasicDbTable(){};
+    ~BasicDbTable() {};
 
     void initialize() {
         // create keyspace if not exists

@@ -7,5 +7,6 @@ int main() {
     if (x == 1) {
         std::cout << "probe " << x << "\n";
     }
+
     return 0;
 }
