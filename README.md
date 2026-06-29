@@ -1,5 +1,7 @@
 # behh
 
+[![CI Debian & Arch](https://github.com/prothegee/behh/actions/workflows/ci.yml/badge.svg)](https://github.com/prothegee/behh/actions/workflows/ci.yml)
+
 module library treatment for c++ backend project
 <!--
 note:
