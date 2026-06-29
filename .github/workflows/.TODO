@@ -1,0 +1,24 @@
+# .TODO
+
+Next step for the ci/cd workflow in this directory.
+
+## full build (next step)
+
+Status: ci.yml gates a lite build only (core library plus stb, nanosvg, zxing)
+on debian trixie and arch, running the no service tests. couchbase, sdl3, haru,
+and drogon are left out of that gate to keep it offline and fast.
+
+Next fix (add a full build, likely a nightly or manual job, not the merge gate):
+- sdl3: install the system dev libraries it links against per distro (x11,
+  wayland, alsa, pulseaudio, and friends).
+- haru: install libpng and zlib dev.
+- couchbase: it still downloads at configure time, so make it offline first:
+  - commit a CPM source cache and point CPM_SOURCE_CACHE at it. the packages are
+    snappy, spdlog, gsl, hdr_histogram, llhttp, taocpp-json (with pegtl), asio.
+  - commit a cacert.pem and use it instead of fetching from curl.se.
+- drogon: optional. needs a PIC build (see the root .TODO shared library item)
+  when the shared library is also wanted. the communication path and
+  test_communication_smtps depend on it.
+- databases: test_database_couchbase_rw and test_database_scylla_rw need a
+  running service, so keep them out of an unattended gate or stand up a service
+  container.

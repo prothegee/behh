@@ -221,5 +221,5 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::execute_sqlpp_future(const std::st
 
     return 1;
 }
-#endif // BEHH_USING_COUCHBASE_CXX_CLIENT
 } // namespace behh
+#endif // BEHH_USING_COUCHBASE_CXX_CLIENT
