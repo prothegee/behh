@@ -19,9 +19,9 @@ int main() {
         // if test_communication_smtps.json doesn't exists
         // copy test_communication_smtps.json.debug and rename to test_communication_smtps.json
         // dont forget to adjust your value test
-        const Json::Value CONFIG = behh::utility_functions::jsoncpp::from_json_file("../../../tests/test_communication_smtps.json");
+        const Json::Value CONFIG = behh::utility_functions::jsoncpp::from_json_file(BEHH_TESTS_DIR "/test_communication_smtps.json");
 
-        const std::string TEMPLATE_HTML = "../../../tests/test_communication_smtps.html";
+        const std::string TEMPLATE_HTML = BEHH_TESTS_DIR "/test_communication_smtps.html";
         const std::string TEMPLATE_TITLE = "[ TEST ] - test_communication_smtps";
         const std::string TEMPLATE_RECIPIENT = CONFIG["recipient"].asString();
 
