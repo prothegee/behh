@@ -1,0 +1,58 @@
+# .TODO
+
+This library originaly created in Debian 11 & 12.
+Follow-up items deferred from the debug build fix on arch-based.
+
+## shared library (libbehh.so) is disabled
+
+Status: static-only build (BEHH_BUILD_SHARED=OFF in build-debug-full-linux.sh).
+
+Why:
+- the prebuilt /mnt/256a1/lib/libdrogon.a is non-PIC (built without -fPIC).
+- it uses local-exec thread-local storage (relocation R_X86_64_TPOFF32).
+- a non-PIC static archive with local-exec TLS cannot be linked into a shared
+  object, so libbehh.so fails at link time.
+- the static library, all tests, and tools build and link fine, they only ever
+  use behh_static.
+
+Next fix (to re-enable the shared library):
+- rebuild drogon with position independent code, then install it:
+    cd /mnt/256a1/repo/drogon
+    cmake -B build -DCMAKE_POSITION_INDEPENDENT_CODE=ON <other flags>
+    cmake --build build
+    cmake --install build
+- after a PIC libdrogon.a is in place, drop -DBEHH_BUILD_SHARED=false from
+  build-debug-full-linux.sh (the option defaults ON).
+- alternative: link drogon as a shared library instead of the static archive.
+
+## support aes gcm
+
+Status: not implemented. only aes-256-cbc exists today in
+behh::cryptography_functions::stream_cipher.
+
+Why:
+- cbc has no built-in authentication, a gcm path gives authenticated
+  encryption (confidentiality plus integrity) with an auth tag.
+
+Next fix (to add gcm alongside the existing cbc functions):
+- add aes_gcm_encrypt_openssl / aes_gcm_decrypt_openssl (string in/out) and
+  aes_gcm_encrypt_to_buffer_openssl / aes_gcm_decrypt_to_buffer_openssl (buffer
+  in/out), mirroring the current cbc signatures.
+- use EVP_aes_256_gcm(), a 12 byte iv/nonce, and produce the 16 byte tag on
+  encrypt. on decrypt, set the tag with EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_SET_TAG)
+  before final, and fail when verification fails.
+- decide the output layout for the buffer path (i.e. iv plus ciphertext plus
+  tag) and document it.
+- optional: support aad (additional authenticated data).
+- add tests covering encrypt then decrypt, plus a tamper case that must fail.
+
+## notes for the contributor/maintainer
+
+- the object core lib (add_library(behh OBJECT ...)) is what compiles the
+  sources. dependency wiring done only on behh_static / behh_shared (the foreach
+  loop) does NOT reach that compilation. anything that affects how the sources
+  compile (include dirs, and PUBLIC compile definitions like
+  ZXING_EXPERIMENTAL_API) must also be applied to the object lib, otherwise the
+  headers and the linked library disagree on struct layout (ABI mismatch).
+- test data files are resolved from BEHH_TESTS_DIR (absolute path injected by
+  tests/CMakeLists.txt), so tests can run from any working directory.
