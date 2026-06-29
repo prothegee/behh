@@ -357,6 +357,29 @@ endif()
 if(JsonCpp_FOUND OR jsoncpp_FOUND OR Jsoncpp_FOUND OR JSONCPP_FOUND)
     set(BEHH_USING_JSONCPP true)
     message(NOTICE "-- ${PROJECT_NAME}: adding jsoncpp since package found")
+
+    # propagate the jsoncpp include dir so the object core lib (which compiles the
+    # sources, i.e. communication.cc with <json/json.h>) can find the headers.
+    # debian ships them under /usr/include/jsoncpp (outside the default include
+    # path), unlike arch where they sit in /usr/include. collect from whichever
+    # detection path succeeded: pkg-config vars or the config package targets.
+    set(BEHH_JSONCPP_INCLUDE_DIRS)
+    if(JSONCPP_INCLUDE_DIRS)
+        list(APPEND BEHH_JSONCPP_INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS})
+    endif()
+    foreach(BEHH_JSONCPP_TARGET jsoncpp_lib JsonCpp::JsonCpp jsoncpp_static)
+        if(TARGET ${BEHH_JSONCPP_TARGET})
+            get_target_property(BEHH_JSONCPP_TARGET_INC ${BEHH_JSONCPP_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+            if(BEHH_JSONCPP_TARGET_INC)
+                list(APPEND BEHH_JSONCPP_INCLUDE_DIRS ${BEHH_JSONCPP_TARGET_INC})
+            endif()
+        endif()
+    endforeach()
+
+    if(BEHH_JSONCPP_INCLUDE_DIRS)
+        list(REMOVE_DUPLICATES BEHH_JSONCPP_INCLUDE_DIRS)
+        include_directories(${BEHH_JSONCPP_INCLUDE_DIRS})
+    endif()
 endif()
 ##
 ## openssl
