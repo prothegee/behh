@@ -8,9 +8,9 @@ int main() {
     std::string iv_24 = "abcdefghijklmnopqrstuvwx";
     std::string ik_32 = "abcdefghijklmnopqrstuvwxyz012345";
 
-    std::string example_in1 = "../../../tests/example_in1.json";
-    std::string example_out1_enc = "../../../tests/example_out1_enc.json";
-    std::string example_out1_dec = "../../../tests/example_out1_dec.json";
+    std::string example_in1 = BEHH_TESTS_DIR "/example_in1.json";
+    std::string example_out1_enc = BEHH_TESTS_DIR "/example_out1_enc.json";
+    std::string example_out1_dec = BEHH_TESTS_DIR "/example_out1_dec.json";
 
 #if BEHH_USING_OPENSSL
     auto example_in1_status = behh::utility_functions::file::encrypt(

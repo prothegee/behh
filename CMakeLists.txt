@@ -19,6 +19,10 @@ project(behh
 option(BEHH_BUILD_TESTS                         "build project test/s" OFF)
 ## build tools, default false/OFF
 option(BEHH_BUILD_TOOLS                         "build project tool/s" OFF)
+## build shared library, default true/ON
+## set OFF when a linked static dep is non-PIC (i.e. a prebuilt libdrogon.a built
+## without -fPIC), since such a dep cannot be linked into a shared object.
+option(BEHH_BUILD_SHARED                        "build project shared library" ON)
 ## build vendor stb, default false/OFF
 option(BEHH_BUILD_VENDOR_STB                    "build vendor stb" OFF)
 ## build vendor sdl, default false/OFF
@@ -665,10 +669,35 @@ endif()
 # project lib
 ## object core lib
 add_library(${PROJECT_NAME} OBJECT ${BEHH_SOURCES_FILES})
+
+## drogon for the object core lib
+### the object lib compiles the sources (i.e. communication.cc includes <drogon/drogon.h>),
+### but drogon is only linked on behh_static & behh_shared. link it here so the object lib
+### sees drogon headers. as a target usage-requirement, drogon include dirs land after the
+### vendored ones, so the project vendored zxing/stb still take precedence.
+if(BEHH_USING_DROGON)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
+endif()
+
+## zxing experimental api for the object core lib
+### the vendored libZXing is built with ZXING_EXPERIMENTAL_API (set above), which is a PUBLIC
+### compile flag that adds members to ZXing public types (Barcode, ReaderOptions). that flag only
+### reaches behh_static & behh_shared via the foreach link, but the object lib is what compiles
+### generate.cc. without the same define, generate.cc sees a smaller struct layout than the linked
+### library, so ReadBarcode returning a Barcode by value overruns the caller stack. define it here
+### so the object lib matches the library ABI.
+if(BEHH_USING_ZXING_CPP AND ZXING_EXPERIMENTAL_API)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE ZXING_EXPERIMENTAL_API)
+endif()
 ## static core lib
 add_library(behh_static STATIC $<TARGET_OBJECTS:${PROJECT_NAME}>)
 ## shared code lib
-add_library(behh_shared SHARED $<TARGET_OBJECTS:${PROJECT_NAME}>)
+if(BEHH_BUILD_SHARED)
+    add_library(behh_shared SHARED $<TARGET_OBJECTS:${PROJECT_NAME}>)
+else()
+    message(WARNING "-- ${PROJECT_NAME}: shared library is disabled (BEHH_BUILD_SHARED=OFF), building static only")
+    message(NOTICE  "-- ${PROJECT_NAME}: TODO - re-enable shared library once a PIC drogon is available (the prebuilt libdrogon.a is non-PIC, local-exec TLS cannot link into a shared object). rebuild drogon with CMAKE_POSITION_INDEPENDENT_CODE=ON, then drop BEHH_BUILD_SHARED=OFF")
+endif()
 ### lib/s name
 #### lib output
 set(BEGE_OUTPUT_NAME "behh")
@@ -678,17 +707,22 @@ if(WIN32)
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
         OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
     )
-    set_target_properties(behh_shared PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
-    )
+    if(TARGET behh_shared)
+        set_target_properties(behh_shared PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+            OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
+        )
+    endif()
 else()
     set_target_properties(behh_static PROPERTIES
         OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
     )
-    set_target_properties(behh_shared PROPERTIES
-        OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
-    )
+
+    if(TARGET behh_shared)
+        set_target_properties(behh_shared PROPERTIES
+            OUTPUT_NAME "${BEGE_OUTPUT_NAME}"
+        )
+    endif()
 endif()
 
 ## installed options
@@ -798,13 +832,17 @@ generate_export_header(behh_static
     EXPORT_FILE_NAME
         ${PROJECT_SOURCE_DIR}/src/inc/behh/export_static.hh
 )
-generate_export_header(behh_shared
-    EXPORT_FILE_NAME
-        ${PROJECT_SOURCE_DIR}/src/inc/behh/export_shared.hh
-)
+if(TARGET behh_shared)
+    generate_export_header(behh_shared
+        EXPORT_FILE_NAME
+            ${PROJECT_SOURCE_DIR}/src/inc/behh/export_shared.hh
+    )
+endif()
 
 # behh shared definitions
-target_compile_definitions(behh_shared PRIVATE BEHH_SHARED)
+if(TARGET behh_shared)
+    target_compile_definitions(behh_shared PRIVATE BEHH_SHARED)
+endif()
 
 # target include dirs
 ## core include: src/inc
@@ -822,7 +860,12 @@ target_sources(${PROJECT_NAME}
 
 # dependencies for static & shared
 ## loop dependencies target
-foreach(BEHH_TARGET behh_static behh_shared)
+set(BEHH_LIB_TARGETS behh_static)
+if(TARGET behh_shared)
+    list(APPEND BEHH_LIB_TARGETS behh_shared)
+endif()
+
+foreach(BEHH_TARGET ${BEHH_LIB_TARGETS})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${BEHH_TARGET} PRIVATE
             -Wall
@@ -978,10 +1021,12 @@ foreach(BEHH_TARGET behh_static behh_shared)
 endforeach()
 
 # version shared lib
-set_target_properties(behh_shared PROPERTIES
-    VERSION "${BEHH_VERSION_MAJOR}.${BEHH_VERSION_MINOR}.${BEHH_VERSION_PATCH}"
-    SOVERSION "${BEHH_VERSION_MAJOR}.${BEHH_VERSION_MINOR}.${BEHH_VERSION_PATCH}"
-)
+if(TARGET behh_shared)
+    set_target_properties(behh_shared PROPERTIES
+        VERSION "${BEHH_VERSION_MAJOR}.${BEHH_VERSION_MINOR}.${BEHH_VERSION_PATCH}"
+        SOVERSION "${BEHH_VERSION_MAJOR}.${BEHH_VERSION_MINOR}.${BEHH_VERSION_PATCH}"
+    )
+endif()
 
 # build tests
 if(BEHH_BUILD_TESTS)

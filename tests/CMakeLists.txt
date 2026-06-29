@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.15...3.30)
 
 project(test_behh)
 
+# absolute path to this tests source dir, so test data files resolve from any
+# working directory instead of the cwd-relative "../../../tests/" form.
+add_compile_definitions(BEHH_TESTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 # test_aes_openssl
 if(BEHH_USING_OPENSSL)
     add_executable(test_aes_openssl test_aes_openssl.cc)

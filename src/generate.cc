@@ -209,7 +209,7 @@ int32_t encode(const std::string& content, const std::string& file_output, const
 int32_t decode(const std::string& content, std::string& file_output, const BarcodeFormat& format, const bool& tryhard) {
     try {
         bool isOk = false;
-        int32_t width, height, channels;
+        int32_t width = 0, height = 0, channels = 0;
 
         std::vector<uint8_t> luminance_data;
 
