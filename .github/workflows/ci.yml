@@ -25,10 +25,19 @@ jobs:
     steps:
       - name: install dependencies
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends \
+          # retry, the apt mirror can flake on update or download.
+          n=0
+          until apt-get update && apt-get install -y --no-install-recommends \
             build-essential cmake ninja-build git ca-certificates pkg-config \
-            libssl-dev uuid-dev zlib1g-dev libjsoncpp-dev
+            libssl-dev uuid-dev zlib1g-dev libjsoncpp-dev; do
+            n=$((n + 1))
+            if [ "${n}" -ge 3 ]; then
+              echo "apt failed after ${n} attempts"
+              exit 1
+            fi
+            echo "apt attempt ${n} failed, retrying in 15s"
+            sleep 15
+          done
 
       - name: checkout
         uses: actions/checkout@v4
@@ -58,9 +67,19 @@ jobs:
     steps:
       - name: install dependencies
         run: |
-          pacman -Syu --noconfirm --needed \
+          # retry, the arch mirror can flake mid download on a full -Syu.
+          n=0
+          until pacman -Syu --noconfirm --needed --disable-download-timeout \
             base-devel cmake ninja git pkgconf \
-            openssl util-linux-libs zlib jsoncpp
+            openssl util-linux-libs zlib jsoncpp; do
+            n=$((n + 1))
+            if [ "${n}" -ge 3 ]; then
+              echo "pacman failed after ${n} attempts"
+              exit 1
+            fi
+            echo "pacman attempt ${n} failed, retrying in 15s"
+            sleep 15
+          done
 
       - name: checkout
         uses: actions/checkout@v4
