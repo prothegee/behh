@@ -17,7 +17,7 @@
 
 // main config file for this test
 // if doesn't exists, copy the "test_database_couchbase_rw.json.debug" and rename to "test_database_couchbase_rw.json"
-INLNSTTCCNST std::string CONFIG_FILE = "../../../tests/test_database_couchbase_rw.json";
+INLNSTTCCNST std::string CONFIG_FILE = BEHH_TESTS_DIR "/test_database_couchbase_rw.json";
 
 std::mutex print_mutex;
 class BasicDbTable : public behh::ICouchbaseCoreInterface {
