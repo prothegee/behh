@@ -7,8 +7,11 @@ set -euo pipefail
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 style_file="${root_dir}/.clang-format"
 
-if ! command -v clang-format > /dev/null 2>&1; then
-    echo "clang-format.sh: clang-format is not installed"
+# allow overriding the binary, e.g. CLANG_FORMAT=clang-format-22 to pin a version.
+clang_format="${CLANG_FORMAT:-clang-format}"
+
+if ! command -v "${clang_format}" > /dev/null 2>&1; then
+    echo "clang-format.sh: ${clang_format} is not installed"
     exit 1
 fi
 
@@ -31,8 +34,8 @@ if [ "${#files[@]}" -eq 0 ]; then
     exit 0
 fi
 
-echo "clang-format.sh: formatting ${#files[@]} files with ${style_file}"
+echo "clang-format.sh: formatting ${#files[@]} files with ${style_file} using ${clang_format}"
 
-clang-format -i --style="file:${style_file}" "${files[@]}"
+"${clang_format}" -i --style="file:${style_file}" "${files[@]}"
 
 echo "clang-format.sh: done"
