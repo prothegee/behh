@@ -1,0 +1,61 @@
+name: debian trixie
+
+# lite build gate on debian trixie for pull requests into main.
+# builds the core library plus the self-contained vendors (stb, nanosvg, zxing)
+# and runs the tests that need no external service. couchbase, sdl3, haru, and
+# drogon are intentionally left out to keep this offline and fast. see .TODO for
+# the planned full build.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-debian-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-debian:
+    name: build-debian
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: install dependencies
+        run: |
+          # retry, the apt mirror can flake on update or download.
+          n=0
+          until apt-get update && apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git ca-certificates pkg-config \
+            libssl-dev uuid-dev zlib1g-dev libjsoncpp-dev; do
+            n=$((n + 1))
+            if [ "${n}" -ge 3 ]; then
+              echo "apt failed after ${n} attempts"
+              exit 1
+            fi
+            echo "apt attempt ${n} failed, retrying in 15s"
+            sleep 15
+          done
+
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: configure
+        run: |
+          cmake -G Ninja -B build/debug -DCMAKE_BUILD_TYPE=Debug \
+            -DBEHH_BUILD_TESTS=true \
+            -DBEHH_BUILD_VENDOR_STB=true \
+            -DBEHH_BUILD_VENDOR_NANOSVG=true \
+            -DBEHH_BUILD_VENDOR_ZXING_CPP=true
+
+      - name: build
+        run: cmake --build build/debug --target all
+
+      - name: test
+        run: |
+          for t in test_base64 test_date_and_time test_aes_openssl test_file_enc_dec test_barcode_qrcode; do
+            echo "== running ${t} =="
+            ./build/debug/BEHH_TESTS/${t}
+          done
