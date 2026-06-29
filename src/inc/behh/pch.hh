@@ -4,19 +4,18 @@
 #include "config.hh"
 #include "export.hh"
 #ifdef behh_shared_EXPORTS
-  #include "export_shared.hh"
+#include "export_shared.hh"
 #else
-  #include "export_static.hh" 
+#include "export_static.hh"
 #endif
 
-#include <cstdint>
 #include <array>
-#include <vector>
-#include <string>
+#include <cstdint>
 #include <sstream>
+#include <string>
+#include <vector>
 
-namespace behh
-{
+namespace behh {
 } // namespace behh
 
 // alias for char

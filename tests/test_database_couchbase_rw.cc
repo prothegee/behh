@@ -7,13 +7,13 @@
 
 #include <spdlog/fmt/bundled/core.h>
 
-#include <mutex>
-#include <thread>
-#include <future>
-#include <chrono>
-#include <iostream>
 #include <atomic>
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <mutex>
 #include <system_error>
+#include <thread>
 
 // main config file for this test
 // if doesn't exists, copy the "test_database_couchbase_rw.json.debug" and rename to "test_database_couchbase_rw.json"
@@ -46,11 +46,11 @@ public:
     struct table_data {
         std::string id;
         std::string random_text;
-        int32_t     random_integer;
-        int64_t     random_big_integer;
-        float32_t   random_float;
-        float64_t   random_double;
-        int64_t     created_timestamp;
+        int32_t random_integer;
+        int64_t random_big_integer;
+        float32_t random_float;
+        float64_t random_double;
+        int64_t created_timestamp;
         std::string created_timestring;
     }; // struct table_data
 
@@ -76,7 +76,7 @@ public:
         ICouchbase.initialize_constructor(_conn, 6); // no log
     }
     ~BasicDbTable() {
-        // 
+        //
     }
 
     /////////////////////////////////////////////////////////////////
@@ -118,19 +118,19 @@ public:
         auto collection = ICouchbase.get_cluster_bucket_scope_collection();
 
         auto [err, resp] = collection.upsert(
-            // primary key
-            data.id,
-            tao::json::value{
-                {doc_key::random_text, data.random_text},
-                {doc_key::random_integer, data.random_integer},
-                {doc_key::random_big_integer, data.random_big_integer},
-                {doc_key::random_float, data.random_float},
-                {doc_key::random_double, data.random_double},
-                {doc_key::created_timestamp, data.created_timestamp},
-                {doc_key::created_timestring, data.created_timestring},
-            },
-            { /* n/a */ }
-        ).get();
+                                         // primary key
+                                         data.id,
+                                         tao::json::value{
+                                             {doc_key::random_text, data.random_text},
+                                             {doc_key::random_integer, data.random_integer},
+                                             {doc_key::random_big_integer, data.random_big_integer},
+                                             {doc_key::random_float, data.random_float},
+                                             {doc_key::random_double, data.random_double},
+                                             {doc_key::created_timestamp, data.created_timestamp},
+                                             {doc_key::created_timestring, data.created_timestring},
+                                         },
+                                         {/* n/a */})
+                               .get();
 
         if (err.ec()) {
             error_iter += 1;
@@ -141,8 +141,8 @@ public:
         if (count_iter <= max_iter) {
             std::cout << "\r         \r";
             std::cout << "-- note: current iter is " << current_iter
-                    << " with " << count_error.load(std::memory_order_relaxed) << " errors "
-                    << count_collide.load(std::memory_order_relaxed) << " collides" << std::flush;
+                      << " with " << count_error.load(std::memory_order_relaxed) << " errors "
+                      << count_collide.load(std::memory_order_relaxed) << " collides" << std::flush;
         }
 
         if (count_iter == max_iter) {
@@ -188,8 +188,7 @@ int main() {
                 std::launch::async,
                 [&table, &count_error, &count_iter, &count_collide, &MAX_ITER_WRITE]() {
                     table.generate_random_data(count_error, count_iter, count_collide, MAX_ITER_WRITE);
-                }
-            ));
+                }));
         }
 
         // for (auto& future : futures) {
@@ -211,12 +210,9 @@ int main() {
         uint64_t errors = count_error.load();
         uint64_t collides = count_collide.load();
 
-        if (errors > 0 || count_collide > 0)
-        {
+        if (errors > 0 || count_collide > 0) {
             std::cout << "\n-- note: found " << errors << " error & " << collides << " collide, while executing in " << duration.count() << "seconds\n";
-        }
-        else
-        {
+        } else {
             std::cout << "\n-- note: no error & collide found in " << duration.count() << " seconds\n";
         }
     }

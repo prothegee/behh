@@ -90,15 +90,15 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::initialize_constructor(couchbase_c
 
     if (connection_result.first) {
 #if BEHH_IS_DEBUG
-    (std::strlen(extra_info) > 0)
-        ? std::cerr << "DEBUG: \"ICouchbaseCoreInterface::_ICouchbase::initialize_constructor\" fail to connect: \"" << extra_info << "\" | error code: " << connection_result.first.ec().message() << "\n"
-        : std::cerr << "DEBUG: \"ICouchbaseCoreInterface::_ICouchbase::initialize_constructor\" fail to connect: ( extra_info is not provided )\n";
+        (std::strlen(extra_info) > 0)
+            ? std::cerr << "DEBUG: \"ICouchbaseCoreInterface::_ICouchbase::initialize_constructor\" fail to connect: \"" << extra_info << "\" | error code: " << connection_result.first.ec().message() << "\n"
+            : std::cerr << "DEBUG: \"ICouchbaseCoreInterface::_ICouchbase::initialize_constructor\" fail to connect: ( extra_info is not provided )\n";
 #endif // BEHH_IS_DEBUG
         return -9;
     }
 
-    m_current_bucket_exists = 0; // false
-    m_current_bucket_scope_exists = 0; // false
+    m_current_bucket_exists = 0;                  // false
+    m_current_bucket_scope_exists = 0;            // false
     m_current_bucket_scope_collection_exists = 0; // false
 
     // move connection_result where connection_result can't be used again
@@ -129,14 +129,14 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::initialize_constructor(couchbase_c
 
             // in debug it's empty, but in release it shouldn't reach here
             if (m_connection.cluster_bucket_name.empty()) {
-        #if BEHH_IS_DEBUG
+#if BEHH_IS_DEBUG
                 std::cout << "WARNING: this seems a debug and bucket name is empty, set to \"bucket_default\"\n";
 
                 settings.name = "bucket_default";
-        #else
+#else
                 std::cerr << "ERROR: it's release build, but bucket name is still empty somehow\n";
                 exit(555666);
-        #endif // BEHH_IS_DEBUG
+#endif // BEHH_IS_DEBUG
             } else {
                 settings.name = m_connection.cluster_bucket_name;
             }
@@ -189,7 +189,6 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::initialize_constructor(couchbase_c
     return 1;
 }
 
-
 int32_t ICouchbaseCoreInterface::_ICouchbase::execute_sqlpp(const std::string& query, std::pair<couchbase::error, couchbase::query_result>& data_to_pass, const bool_t& consistent) {
     try {
         (!consistent)
@@ -201,7 +200,7 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::execute_sqlpp(const std::string& q
             return -1;
         }
 
-    } catch(const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "ERROR execute_sqlpp: " << e.what() << '\n';
         return -69;
     }
@@ -214,7 +213,7 @@ int32_t ICouchbaseCoreInterface::_ICouchbase::execute_sqlpp_future(const std::st
         (consistent)
             ? data_to_pass = m_cluster.query(query, {})
             : data_to_pass = m_cluster.query(query, couchbase::query_options().scan_consistency(couchbase::query_scan_consistency::request_plus));
-    } catch(const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "ERROR execute_sqlpp_future: " << e.what() << '\n';
         return -69;
     }
