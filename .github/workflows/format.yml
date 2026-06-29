@@ -1,85 +1,46 @@
 name: format
 
-# keep main consistent: after a merge lands on main and BOTH distro builds
-# pass for that commit, run clang-format.sh and commit any fixes back to main.
+# keep pull requests consistent: on every pr, run clang-format.sh and commit any
+# fixes back to the pr branch. the commit goes to the pr branch, not main, so the
+# main ruleset does not apply. this needs the repo workflow token set to read and
+# write (settings -> actions -> general -> workflow permissions).
 #
-# note: this fires when either build workflow completes, then gates on both
-# being green for the same commit, so it effectively runs once the slower of
-# the two finishes. the push uses GITHUB_TOKEN, which does not re-trigger the
-# build workflows, so there is no loop. this workflow file must live on main
-# for the workflow_run trigger to take effect.
+# note: a push by GITHUB_TOKEN does not re-trigger workflows, so the auto fix
+# commit will not start another format run (no loop). fork pull requests get a
+# read only token and cannot be auto fixed, that is expected.
 
 on:
-  workflow_run:
-    workflows: [debian trixie, archlinux latest]
-    types: [completed]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: read
 
 concurrency:
-  group: format-main
-  cancel-in-progress: false
+  group: format-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   clang-format:
     runs-on: ubuntu-latest
-    # only for a successful push build on main (a merge), not pull request runs
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      ( github.event.workflow_run.head_branch == 'main' &&
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.conclusion == 'success' )
     steps:
-      - name: gate on both distro builds passing for this commit
-        id: gate
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          # workflow_dispatch has no triggering build, just proceed
-          if [ -z "${SHA}" ]; then
-            echo "passed=1" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          passed=1
-          for wf in ci-debian.yml ci-arch.yml; do
-            concl=$(gh run list --workflow "${wf}" --branch main --event push \
-              --json headSha,conclusion \
-              --jq "[.[] | select(.headSha==\"${SHA}\")][0].conclusion // \"pending\"")
-            echo "${wf}: ${concl}"
-            if [ "${concl}" != "success" ]; then
-              passed=0
-            fi
-          done
-
-          echo "passed=${passed}" >> "${GITHUB_OUTPUT}"
-
-      - name: checkout main
-        if: steps.gate.outputs.passed == '1'
+      - name: checkout pr branch
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.head_ref }}
 
       - name: install clang-format
-        if: steps.gate.outputs.passed == '1'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends clang-format
 
       - name: run formatter
-        if: steps.gate.outputs.passed == '1'
         run: ./clang-format.sh
 
       - name: commit changes
-        if: steps.gate.outputs.passed == '1'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "apply clang-format" || exit 0
-          git push origin HEAD:main
+          git push
