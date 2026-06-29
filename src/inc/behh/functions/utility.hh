@@ -242,21 +242,21 @@ std::string v4();
 
 /**
  * @brief format uuid to ref
- * 
+ *
  * @note i.e. b135d6d2-5b93-4310-92d8-25f271535de7 to b135d6d25b93431092d825f271535de7
- * 
- * @param uuid_string 
- * @return std::string 
+ *
+ * @param uuid_string
+ * @return std::string
  */
 std::string format_uuid_to_ref(const std::string& uuid_string);
 
 /**
  * @brief format ref to uuid
- * 
+ *
  * @note i.e. b135d6d25b93431092d825f271535de7 to b135d6d2-5b93-4310-92d8-25f271535de7
- * 
- * @param ref_string 
- * @return std::string 
+ *
+ * @param ref_string
+ * @return std::string
  */
 std::string format_ref_to_uuid(const std::string& ref_string);
 } // namespace uuid
@@ -450,7 +450,7 @@ namespace file {
  *
  * @note careful with chunk_size
  *
- * @param mode 1:aes cbc
+ * @param mode 1:aes cbc, 2:aes gcm
  * @param file_input
  * @param file_output
  * @param iv
@@ -465,7 +465,7 @@ int32_t encrypt(const int32_t& mode, const std::string& file_input, const std::s
  *
  * @note careful with chunk_size
  *
- * @param mode 1:aes cbc
+ * @param mode 1:aes cbc, 2:aes gcm
  * @param file_input
  * @param file_output
  * @param iv
