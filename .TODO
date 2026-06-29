@@ -25,27 +25,6 @@ Next fix (to re-enable the shared library):
   build-debug-full-linux.sh (the option defaults ON).
 - alternative: link drogon as a shared library instead of the static archive.
 
-## support aes gcm
-
-Status: not implemented. only aes-256-cbc exists today in
-behh::cryptography_functions::stream_cipher.
-
-Why:
-- cbc has no built-in authentication, a gcm path gives authenticated
-  encryption (confidentiality plus integrity) with an auth tag.
-
-Next fix (to add gcm alongside the existing cbc functions):
-- add aes_gcm_encrypt_openssl / aes_gcm_decrypt_openssl (string in/out) and
-  aes_gcm_encrypt_to_buffer_openssl / aes_gcm_decrypt_to_buffer_openssl (buffer
-  in/out), mirroring the current cbc signatures.
-- use EVP_aes_256_gcm(), a 12 byte iv/nonce, and produce the 16 byte tag on
-  encrypt. on decrypt, set the tag with EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_SET_TAG)
-  before final, and fail when verification fails.
-- decide the output layout for the buffer path (i.e. iv plus ciphertext plus
-  tag) and document it.
-- optional: support aad (additional authenticated data).
-- add tests covering encrypt then decrypt, plus a tamper case that must fail.
-
 ## notes for the contributor/maintainer
 
 - the object core lib (add_library(behh OBJECT ...)) is what compiles the
